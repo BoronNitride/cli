@@ -1,8 +1,34 @@
+from enum import Enum
 from typing import List, Dict
-
 import pydantic
 import yaml
 from pydantic import BaseModel
+
+
+class Type(str, Enum):
+    NUMBER='number'
+    DECIMAL='decimal'
+    NUMERIC='numeric'
+    INT='int'
+    INTEGER='integer'
+    LONG='long'
+    BIGINT='bigint'
+    FLOAT='float'
+    DOUBLE='double'
+    STRING='string'
+    TEXT='text'
+    VARCHAR='varchar'
+    BOOLEAN='boolean'
+    TIMESTAMP='timestamp'
+    TIMESTAMP_TZ='timestamp_tz'
+    TIMESTAMP_NTZ='timestamp_ntz'
+    DATE='date'
+    ARRAY='array'
+    OBJECT='object'
+    RECORD='record'
+    STRUCT='struct'
+    BYTES='bytes'
+    NULL='null'
 
 
 class Contact(BaseModel):
@@ -40,7 +66,7 @@ class Terms(BaseModel):
 
 class Field(BaseModel):
     ref: str = None
-    type: str = None
+    type: Type = None
     format: str = None
     required: bool = None
     unique: bool = None
