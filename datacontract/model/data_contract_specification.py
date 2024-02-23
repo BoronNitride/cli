@@ -50,6 +50,7 @@ class Server(BaseModel):
     database: str = None
     schema_: str = pydantic.fields.Field(default=None, alias='schema')
     host: str = None
+    port: int = None
     catalog: str = None
     http_path: str = None # Use ENV variable
     token: str = None     # Use ENV variable
@@ -73,6 +74,14 @@ class Field(BaseModel):
     description: str = None
     pii: bool = None
     classification: str = None
+    pattern: str = None
+    minLength: int = None
+    maxLength: int = None
+    minimum: int = None
+    minimumExclusive: int = None
+    maximum: int = None
+    maximumExclusive: int = None
+    enum: List[str] = []
     tags: List[str] = []
     fields: Dict[str, 'Field'] = {}
 

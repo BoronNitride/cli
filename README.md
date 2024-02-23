@@ -3,8 +3,9 @@
 <p>
   <a href="https://github.com/datacontract/cli/actions/workflows/ci.yaml?query=branch%3Amain">
     <img alt="Test Workflow" src="https://img.shields.io/github/actions/workflow/status/datacontract/cli/ci.yaml?branch=main"></a>
-  <a href="https://img.shields.io/github/stars/datacontract/cli">
+  <a href="https://github.com/datacontract/cli">
     <img alt="Stars" src="https://img.shields.io/github/stars/datacontract/cli" /></a>
+  <a href="https://datacontract.com/slack" rel="nofollow"><img src="https://camo.githubusercontent.com/5ade1fd1e76a6ab860802cdd2941fe2501e2ca2cb534e5d8968dbf864c13d33d/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f736c61636b2d6a6f696e5f636861742d77686974652e7376673f6c6f676f3d736c61636b267374796c653d736f6369616c" alt="Slack Status" data-canonical-src="https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&amp;style=social" style="max-width: 100%;"></a>
 </p>
 
 The `datacontract` CLI is an open source command-line tool for working with [Data Contracts](https://datacontract.com/).
@@ -15,23 +16,52 @@ It uses data contract YAML files to lint the data contract, connect to data sour
 
 ## Getting started
 
-Let's use [pip](https://pip.pypa.io/en/stable/getting-started/) to install the CLI.
+Let's look at this data contract:
+[https://datacontract.com/examples/orders-latest/datacontract.yaml](https://datacontract.com/examples/orders-latest/datacontract.yaml)
+
+We have a _servers_ section with endpoint details to the S3 bucket, _models_ for the structure of the data, and _quality_ attributes that describe the expected freshness and number of rows.
+
+This data contract contains all information to connect to S3 and check that the actual data meets the defined schema and quality requirements. We can use this information to test if the actual data set in S3 is compliant to the data contract.
+
+Let's use [pip](https://pip.pypa.io/en/stable/getting-started/) to install the CLI (or use the [Docker image](#docker), if you prefer).
 ```bash
-$ pip3 install datacontract-cli
+$ python3 -m pip install datacontract-cli
 ```
-
-Now, let's look at this data contract:
-[https://datacontract.com/examples/covid-cases/datacontract.yaml](https://datacontract.com/examples/covid-cases/datacontract.yaml)
-
-We have a _servers_ section with endpoint details to the (public) S3 bucket, _models_ for the structure of the data, and _quality_ attributes that describe the expected freshness and number of rows.
-
-This data contract contains all information to connect to S3 and check that the actual data meets the defined schema and quality requirements.
 
 We run the tests:
 
 ```bash
-$ datacontract test https://datacontract.com/examples/covid-cases/datacontract.yaml
-# returns: 🟢 data contract is valid. Run 12 checks.
+$ datacontract test https://datacontract.com/examples/orders-latest/datacontract.yaml
+
+# returns:
+Testing https://datacontract.com/examples/orders-latest/datacontract.yaml
+╭────────┬─────────────────────────────────────────────────────────────────────┬───────────────────────────────┬─────────╮
+│ Result │ Check                                                               │ Field                         │ Details │
+├────────┼─────────────────────────────────────────────────────────────────────┼───────────────────────────────┼─────────┤
+│ passed │ Check that JSON has valid schema                                    │ orders                        │         │
+│ passed │ Check that JSON has valid schema                                    │ line_items                    │         │
+│ passed │ Check that field order_id is present                                │ orders                        │         │
+│ passed │ Check that field order_timestamp is present                         │ orders                        │         │
+│ passed │ Check that field order_total is present                             │ orders                        │         │
+│ passed │ Check that field customer_id is present                             │ orders                        │         │
+│ passed │ Check that field customer_email_address is present                  │ orders                        │         │
+│ passed │ row_count >= 5000                                                   │ orders                        │         │
+│ passed │ Check that required field order_id has no null values               │ orders.order_id               │         │
+│ passed │ Check that unique field order_id has no duplicate values            │ orders.order_id               │         │
+│ passed │ duplicate_count(order_id) = 0                                       │ orders.order_id               │         │
+│ passed │ Check that required field order_timestamp has no null values        │ orders.order_timestamp        │         │
+│ passed │ freshness(order_timestamp) < 24h                                    │ orders.order_timestamp        │         │
+│ passed │ Check that required field order_total has no null values            │ orders.order_total            │         │
+│ passed │ Check that required field customer_email_address has no null values │ orders.customer_email_address │         │
+│ passed │ Check that field lines_item_id is present                           │ line_items                    │         │
+│ passed │ Check that field order_id is present                                │ line_items                    │         │
+│ passed │ Check that field sku is present                                     │ line_items                    │         │
+│ passed │ values in (order_id) must exist in orders (order_id)                │ line_items.order_id           │         │
+│ passed │ row_count >= 5000                                                   │ line_items                    │         │
+│ passed │ Check that required field lines_item_id has no null values          │ line_items.lines_item_id      │         │
+│ passed │ Check that unique field lines_item_id has no duplicate values       │ line_items.lines_item_id      │         │
+╰────────┴─────────────────────────────────────────────────────────────────────┴───────────────────────────────┴─────────╯
+🟢 data contract is valid. Run 22 checks. Took 6.739514 seconds.
 ```
 
 Voilà, the CLI tested that the _datacontract.yaml_ itself is valid, all records comply with the schema, and all quality attributes are met.
@@ -60,7 +90,7 @@ $ datacontract breaking datacontract-v1.yaml datacontract-v2.yaml
 # export model as jsonschema
 $ datacontract export --format jsonschema datacontract.yaml
 
-# export model as dbt  (Coming Soon)
+# export model as dbt
 $ datacontract export --format dbt datacontract.yaml
 
 # import protobuf as model (Coming Soon)
@@ -101,7 +131,7 @@ Python 3.11 recommended.
 Python 3.12 available as pre-release release candidate for 0.9.3
 
 ```bash
-pip3 install datacontract-cli
+python3 -m pip install datacontract-cli
 ```
 
 ### pipx
@@ -113,14 +143,14 @@ pipx install datacontract-cli
 ### Docker
 
 ```bash
-docker pull --platform linux/amd64 datacontract/cli
-docker run --rm --platform linux/amd64 -v ${PWD}:/home/datacontract datacontract/cli
+docker pull datacontract/cli
+docker run --rm -v ${PWD}:/home/datacontract datacontract/cli
 ```
 
 Or via an alias that automatically uses the latest version:
 
 ```bash
-alias datacontract='docker run --rm -v "${PWD}:/home/datacontract" --platform linux/amd64 datacontract/cli:latest'
+alias datacontract='docker run --rm -v "${PWD}:/home/datacontract" datacontract/cli:latest'
 ```
 
 ## Documentation
@@ -143,7 +173,7 @@ The application uses different engines, based on the server `type`.
 | `s3`         | `json`     | Support for `new_line` delimited JSON files and one JSON record per file. | ✅           | fastjsonschema<br> soda-core-duckdb |
 | `s3`         | `csv`      |                                                                           | ✅           | soda-core-duckdb                    |
 | `s3`         | `delta`    |                                                                           | Coming soon | TBD                                 |
-| `postgres`   | n/a        |                                                                           | Coming soon | TBD                                 |
+| `postgres`   | n/a        |                                                                           | ✅           | soda-core-postgres                  |
 | `snowflake`  | n/a        |                                                                           | ✅           | soda-core-snowflake                 |
 | `bigquery`   | n/a        |                                                                           | ✅           | soda-core-bigquery                  |
 | `redshift`   | n/a        |                                                                           | Coming soon | TBD                                 |
@@ -158,7 +188,7 @@ The application uses different engines, based on the server `type`.
 
 Feel free to create an issue, if you need support for an additional type.
 
-### Server Type S3
+### S3
 
 Data Contract CLI can test data that is stored in S3 buckets or any S3-compliant endpoints in various formats.
 
@@ -184,7 +214,38 @@ servers:
 | `DATACONTRACT_S3_SECRET_ACCESS_KEY` | `93S7LRrJcqLaaaa/XXXXXXXXXXXXX` | AWS Secret Access Key |
 
 
-### Server Type BigQuery
+### Postgres
+
+Data Contract CLI can test data in Postgres or Postgres-compliant databases (e.g., RisingWave).
+
+#### Example
+
+datacontract.yaml
+```yaml
+servers:
+  postgres:
+    type: postgres
+    host: localhost
+    port: 5432
+    database: postgres
+    schema: public
+models:
+  my_table_1: # corresponds to a table
+    type: table
+    fields: 
+      my_column_1: # corresponds to a column
+        type: varchar
+```
+
+#### Environment Variables
+
+| Environment Variable             | Example            | Description |
+|----------------------------------|--------------------|-------------|
+| `DATACONTRACT_POSTGRES_USERNAME` | `postgres`         | Username    |
+| `DATACONTRACT_POSTGRES_PASSWORD` | `mysecretpassword` | Password    |
+
+
+### BigQuery
 
 We support authentication to BigQuery using Service Account Key. The used Service Account should include the roles:
 * BigQuery Job User
@@ -213,7 +274,7 @@ models:
 | `DATACONTRACT_BIGQUERY_ACCOUNT_INFO_JSON_PATH` | `~/service-access-key.json` | Service Access key as saved on key creation by BigQuery |
 
 
-### Server Type Databricks
+### Databricks
 
 Works with Unity Catalog and Hive metastore.
 
@@ -243,7 +304,7 @@ models:
 | `DATACONTRACT_DATABRICKS_HTTP_PATH` | `/sql/1.0/warehouses/b053a3ffffffff` | The HTTP path to the SQL warehouse or compute cluster |
 
 
-### Server Type Databricks (programmatic)
+### Databricks (programmatic)
 
 Works with Unity Catalog and Hive metastore.
 When running in a notebook or pipeline, the provided `spark` session can be used.
@@ -269,7 +330,7 @@ models:
 
 Notebook
 ```python
-%pip install git+https://github.com/datacontract/cli.git
+%pip install datacontract-cli
 dbutils.library.restartPython()
 
 from datacontract.data_contract import DataContract
@@ -290,7 +351,7 @@ Available export options:
 |--------------|------------------------------------------------|--------|
 | `jsonschema` | Export to JSON Schema                          | ✅      | 
 | `sodacl`     | Export to SodaCL quality checks in YAML format | ✅      |
-| `dbt`        | Export to dbt model in YAML format             | TBD    |
+| `dbt`        | Export to dbt model in YAML format             | ✅      |
 | `avro`       | Export to AVRO models                          | TBD    |
 | `pydantic`   | Export to pydantic models                      | TBD    |
 | `sql`        | Export to SQL DDL                              | TBD    |
@@ -298,8 +359,7 @@ Available export options:
 
 ## Development Setup
 
-Python base interpreter should be 3.11.x (unless
-working on 3.12 release candidate).
+Python base interpreter should be 3.11.x (unless working on 3.12 release candidate).
 
 ```bash
 # create venv

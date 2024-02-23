@@ -4,6 +4,9 @@ from typing import Iterable
 
 import typer
 from click import Context
+from rich import box
+from rich import print
+from rich.table import Table
 from typer.core import TyperGroup
 from typing_extensions import Annotated
 
@@ -60,7 +63,7 @@ def init(
     try:
         download_datacontract_file(location, template, overwrite)
     except FileExistsException:
-        print("File already exists, use --overwrite-file to overwrite")
+        print("File already exists, use --overwrite to overwrite")
         raise typer.Exit(code=1)
     else:
         print("📄 data contract written to " + location)
@@ -70,11 +73,13 @@ def init(
 def lint(
     location: Annotated[
         str, typer.Argument(help="The location (url or path) of the data contract yaml.")] = "datacontract.yaml",
+    schema: Annotated[
+        str, typer.Option(help="The location (url or path) of the Data Contract Specification JSON Schema")] = "https://datacontract.com/datacontract.schema.json",
 ):
     """
     Validate that the datacontract.yaml is correctly formatted.
     """
-    run = DataContract(data_contract_file=location).lint()
+    run = DataContract(data_contract_file=location, schema_location=schema).lint()
     _handle_result(run)
 
 
@@ -82,6 +87,8 @@ def lint(
 def test(
     location: Annotated[
         str, typer.Argument(help="The location (url or path) of the data contract yaml.")] = "datacontract.yaml",
+    schema: Annotated[
+        str, typer.Option(help="The location (url or path) of the Data Contract Specification JSON Schema")] = "https://datacontract.com/datacontract.schema.json",
     server: Annotated[str, typer.Option(
         help="The server configuration to run the schema and quality tests. "
              "Use the key of the server object in the data contract yaml file "
@@ -91,18 +98,26 @@ def test(
         help="Run the schema and quality tests on the example data within the data contract.")] = None,
     publish: Annotated[str, typer.Option(
         help="The url to publish the results after the test")] = None,
+    logs: Annotated[bool, typer.Option(
+        help="Print logs")] = False,
 ):
     """
     Run schema and quality tests on configured servers.
     """
     print(f"Testing {location}")
-    run = DataContract(data_contract_file=location, publish_url=publish, examples=examples).test()
+    if server == "all":
+        server = None
+    run = DataContract(data_contract_file=location, schema_location=schema, publish_url=publish, server=server, examples=examples).test()
+    if logs:
+        _print_logs(run)
     _handle_result(run)
 
 
 class ExportFormat(str, Enum):
     jsonschema = "jsonschema"
     sodacl = "sodacl"
+    dbt = "dbt"
+    odcs = "odcs"
 
 
 @app.command()
@@ -120,8 +135,9 @@ def export(
 
 
 def _handle_result(run):
+    _print_table(run)
     if run.result == "passed":
-        print(f"🟢 data contract is valid. Run {len(run.checks)} checks.")
+        print(f"🟢 data contract is valid. Run {len(run.checks)} checks. Took {(run.timestampEnd - run.timestampStart).total_seconds()} seconds.")
     else:
         print("🔴 data contract is invalid, found the following errors:")
         i = 1
@@ -129,6 +145,47 @@ def _handle_result(run):
             if check.result != "passed":
                 print(str(++i) + ") " + check.reason)
         raise typer.Exit(code=1)
+
+
+def _print_table(run):
+    table = Table(box=box.ROUNDED)
+    table.add_column("Result", no_wrap=True)
+    table.add_column("Check", max_width=100)
+    table.add_column("Field", max_width=32)
+    table.add_column("Details", max_width=50)
+    for check in run.checks:
+        table.add_row(with_markup(check.result), check.name, to_field(run, check), check.details)
+    print(table)
+
+
+def to_field(run, check):
+    models = [c.model for c in run.checks]
+    if len(set(models)) > 1:
+        if check.field is None:
+            return check.model
+        return check.model + "." + check.field
+    else:
+        return check.field
+
+
+
+
+def _print_logs(run):
+    print("\nLogs:")
+    for log in run.logs:
+        print(log.timestamp.strftime("%y-%m-%d %H:%M:%S"), log.level.ljust(5), log.message)
+
+
+def with_markup(result):
+    if result == "passed":
+        return "[green]passed[/green]"
+    if result == "warning":
+        return "[yellow]warning[/yellow]"
+    if result == "failed":
+        return "[red]failed[/red]"
+    if result == "error":
+        return "[red]error[/red]"
+    return result
 
 
 if __name__ == "__main__":

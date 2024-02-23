@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5] - 2024-02-22
+
 ### Added
+- export to dbt models (#37).
+- export to ODCS (#49).
+- test - show a test summary table.
+- lint - Support local schema (#46).
+
+## [0.9.4] - 2024-02-18
+
+### Added
+- Support for Postgres
 - Support for Databricks
 
 ## [0.9.3] - 2024-02-10

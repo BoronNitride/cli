@@ -7,6 +7,8 @@ from datacontract.engines.soda.connections.bigquery import \
 from datacontract.engines.soda.connections.databricks import \
     to_databricks_soda_configuration
 from datacontract.engines.soda.connections.duckdb import get_duckdb_connection
+from datacontract.engines.soda.connections.postgres import \
+    to_postgres_soda_configuration
 from datacontract.engines.soda.connections.snowflake import \
     to_snowflake_soda_configuration
 from datacontract.export.sodacl_converter import to_sodacl
@@ -47,6 +49,10 @@ def check_soda_execute(run: Run, data_contract: DataContractSpecification, serve
         soda_configuration_str = to_bigquery_soda_configuration(server)
         scan.add_configuration_yaml_str(soda_configuration_str)
         scan.set_data_source_name(server.type)
+    elif server.type == "postgres":
+        soda_configuration_str = to_postgres_soda_configuration(server)
+        scan.add_configuration_yaml_str(soda_configuration_str)
+        scan.set_data_source_name(server.type)
     elif server.type == "databricks":
         if spark is not None:
             logging.info("Use Spark to connect to data source")
@@ -69,7 +75,8 @@ def check_soda_execute(run: Run, data_contract: DataContractSpecification, serve
         return
 
     # Don't check types for json format, as they are checked with json schema
-    check_types = server.format != "json"
+    # Don't check types for csv format, as they are hard to detect
+    check_types = server.format != "json" and server.format != "csv"
     sodacl_yaml_str = to_sodacl(data_contract, check_types)
     # print("sodacl_yaml_str:\n" + sodacl_yaml_str)
     scan.add_sodacl_yaml_str(sodacl_yaml_str)
@@ -83,9 +90,15 @@ def check_soda_execute(run: Run, data_contract: DataContractSpecification, serve
 
     scan_results = scan.get_scan_results()
     for c in scan_results.get("checks"):
-        check = Check(type="schema", result="passed" if c.get("outcome") == "pass" else "failed" if c.get(
-            "outcome") == "fail" else c.get("outcome"), reason=', '.join(c.get("outcomeReasons")), name=c.get("name"),
-                      model=c.get("table"), field=c.get("column"), engine="soda-core", )
+        check = Check(
+            type="schema",
+            result="passed" if c.get("outcome") == "pass" else "failed" if c.get("outcome") == "fail" else c.get("outcome"),
+            reason=', '.join(c.get("outcomeReasons")),
+            name=c.get("name"),
+            model=c.get("table"),
+            field=c.get("column"),
+            engine="soda-core",
+        )
         update_reason(check, c)
         run.checks.append(check)
 

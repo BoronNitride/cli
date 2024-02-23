@@ -1,7 +1,6 @@
 import json
 import logging
 import tempfile
-from typing import List
 
 import yaml
 
@@ -10,7 +9,9 @@ from datacontract.engines.datacontract.check_that_datacontract_contains_valid_se
 from datacontract.engines.fastjsonschema.check_jsonschema import \
     check_jsonschema
 from datacontract.engines.soda.check_soda_execute import check_soda_execute
+from datacontract.export.dbt_converter import to_dbt
 from datacontract.export.jsonschema_converter import to_jsonschema
+from datacontract.export.odcs_converter import to_odcs
 from datacontract.export.sodacl_converter import to_sodacl
 from datacontract.integration.publish_datamesh_manager import \
     publish_datamesh_manager
@@ -29,6 +30,7 @@ class DataContract:
         data_contract_file: str = None,
         data_contract_str: str = None,
         data_contract: DataContractSpecification = None,
+        schema_location: str = None,
         server: str = None,
         examples: bool = False,
         publish_url: str = None,
@@ -37,6 +39,7 @@ class DataContract:
         self._data_contract_file = data_contract_file
         self._data_contract_str = data_contract_str
         self._data_contract = data_contract
+        self._schema_location = schema_location
         self._server = server
         self._examples = examples
         self._publish_url = publish_url
@@ -47,7 +50,7 @@ class DataContract:
         try:
             run.log_info("Linting data contract")
             data_contract = resolve.resolve_data_contract(self._data_contract_file, self._data_contract_str,
-                                                          self._data_contract)
+                                                          self._data_contract, self._schema_location)
             run.checks.append(Check(
                 type="lint",
                 result="passed",
@@ -84,7 +87,7 @@ class DataContract:
         try:
             run.log_info(f"Testing data contract")
             data_contract = resolve.resolve_data_contract(self._data_contract_file, self._data_contract_str,
-                                                          self._data_contract)
+                                                          self._data_contract, self._schema_location)
 
             check_that_datacontract_contains_valid_server_configuration(run, data_contract, self._server)
             # TODO check yaml contains models
@@ -151,6 +154,10 @@ class DataContract:
             return json.dumps(jsonschema_dict, indent=2)
         if export_format == "sodacl":
             return to_sodacl(data_contract)
+        if export_format == "dbt":
+            return to_dbt(data_contract)
+        if export_format == "odcs":
+            return to_odcs(data_contract)
         else:
             print(f"Export format {export_format} not supported.")
             return ""
