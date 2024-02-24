@@ -87,7 +87,7 @@ def write_fields(fields: Dict[str, Field], w: Writer):
         map_field(name, field, idx, w)
     w.dec_indent()
 
-def to_protubufschemas(data_contract_spec: DataContractSpecification)->Dict[str, str]:
+def to_protobufschemas(data_contract_spec: DataContractSpecification)->Dict[str, str]:
     """Create a google protobuf 3 message for each model in the data_contract_spec.
 
     Cave at 1: many data types from the DataContract schema like TIMESTAMP_NTZ have no unambigous mapping
