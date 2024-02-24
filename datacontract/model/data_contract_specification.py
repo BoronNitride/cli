@@ -5,30 +5,39 @@ import yaml
 from pydantic import BaseModel
 
 
-class Type(str, Enum):
-    NUMBER='number'
-    DECIMAL='decimal'
-    NUMERIC='numeric'
-    INT='int'
-    INTEGER='integer'
-    LONG='long'
-    BIGINT='bigint'
-    FLOAT='float'
-    DOUBLE='double'
-    STRING='string'
-    TEXT='text'
-    VARCHAR='varchar'
-    BOOLEAN='boolean'
-    TIMESTAMP='timestamp'
-    TIMESTAMP_TZ='timestamp_tz'
-    TIMESTAMP_NTZ='timestamp_ntz'
-    DATE='date'
-    ARRAY='array'
-    OBJECT='object'
-    RECORD='record'
-    STRUCT='struct'
-    BYTES='bytes'
-    NULL='null'
+class Type(Tuple[str, bool], Enum):
+    NUMBER=('number', False)
+    DECIMAL=('decimal', False)
+    NUMERIC=('numeric', False)
+    INT=('int', False)
+    INTEGER=('integer', False)
+    LONG=('long', False)
+    BIGINT=('bigint', False)
+    FLOAT=('float', False)
+    DOUBLE=('double', False)
+    STRING=('string', False)
+    TEXT=('text', False)
+    VARCHAR=('varchar', False)
+    BOOLEAN=('boolean', False)
+    TIMESTAMP=('timestamp', False)
+    TIMESTAMP_TZ=('timestamp_tz', False)
+    TIMESTAMP_NTZ=('timestamp_ntz', False)
+    DATE=('date', False)
+    ARRAY=('array', True)
+    OBJECT=('object', True)
+    RECORD=('record', True)
+    STRUCT=('struct', True)
+    BYTES=('bytes', True)
+    NULL=('null', False)
+
+    def __str__(self)->str:
+        return self.value[0]
+
+    def name(self)->str:
+        return self.value[0]
+
+    def is_compound(self)->bool:
+        return self.value[1]
 
 
 class Contact(BaseModel):
