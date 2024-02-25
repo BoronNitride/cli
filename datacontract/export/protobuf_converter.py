@@ -6,7 +6,6 @@ Mapping from DataContract models to protobuf 3 message schema.
 
 """
 from typing import Dict, List, ForwardRef, Union, Optional
-from pydantic import BaseModel
 from io import StringIO
 import re
 
@@ -23,7 +22,7 @@ _TYPE_MAP_:Dict[Type, Optional[str]]={
     Type.INT: 'int32',
     Type.INTEGER: 'int32',
     Type.LONG: 'int64',
-    Type.BIGINT: None,
+    Type.BIGINT: 'int64',
     Type.FLOAT: 'float',
     Type.DOUBLE: 'double',
     Type.STRING: 'string',
