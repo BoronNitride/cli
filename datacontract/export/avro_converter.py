@@ -4,7 +4,6 @@
 """
 Mapping from DataContract models to Apache Avro schema.
 
-* DataContracts are mapped to Avro protocols
 * DataContract Models are mapped to Avro messages
 
 """
